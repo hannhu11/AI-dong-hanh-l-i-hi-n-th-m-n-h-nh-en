@@ -5,7 +5,7 @@ import SettingSwitch from "./settings/SettingSwitch";
 import { useTranslation } from "react-i18next";
 import { handleSettingChange } from "../../utils/handleSettingChange";
 import { useSettingStore } from "../../hooks/useSettingStore";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useState, useEffect } from "react";
 import { IconLanguage, IconMapPin, IconBrain, IconClockHour4, IconDeviceFloppy } from "@tabler/icons-react";
 import { invoke } from "@tauri-apps/api/tauri";
 import SettingButton from "./settings/SettingButton";
@@ -22,16 +22,44 @@ interface ISettingsContent {
 }
 
 function Settings() {
+    const { t, i18n } = useTranslation();
+    
+    // 🛡️ SAFE LOADING - Get store data defensively
+    const storeData = useSettingStore();
+    
+    // 🏙️ Local state with SAFE defaults (bạn's defensive approach)
+    const [selectedCity, setSelectedCity] = useState("Ho Chi Minh City");
+    const [tempAiFrequency, setTempAiFrequency] = useState(3);
+    
+    // 🔄 SYNC local state when store loads (bạn's useEffect idea)
+    useEffect(() => {
+        if (storeData && storeData.city !== undefined) {
+            setSelectedCity(storeData.city || "Ho Chi Minh City");
+            setTempAiFrequency(storeData.aiFrequencyMinutes || 3);
+        }
+    }, [storeData]);
+    
+    // 🚨 EARLY RETURN if store not ready (bạn's idea!)
+    if (!storeData || storeData.city === undefined) {
+        return (
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '200px',
+                color: '#888',
+                fontSize: '16px'
+            }}>
+                {t("Loading settings")}...
+            </div>
+        );
+    }
+
     try {
-        const { t, i18n } = useTranslation();
         const { 
             allowAutoStartUp, allowPetAboveTaskbar, allowPetInteraction, allowOverridePetScale, 
             petScale, allowPetClimbing, city, aiEnabled, aiFrequencyMinutes 
-        } = useSettingStore();
-    
-    // 🏙️ Local state for city selection
-    const [selectedCity, setSelectedCity] = useState(city);
-    const [tempAiFrequency, setTempAiFrequency] = useState(aiFrequencyMinutes);
+        } = storeData;
 
     const settingSwitches: ISettingsContent[] = [
         {

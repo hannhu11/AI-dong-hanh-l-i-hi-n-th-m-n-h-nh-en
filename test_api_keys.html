@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔑 API Keys Tester - Người Bạn Đồng Hành AI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        .test-key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 15px;
+            border-left: 5px solid #ffd700;
+        }
+        .test-key.success {
+            border-left-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+        .test-key.error {
+            border-left-color: #f44336;
+            background: rgba(244, 67, 54, 0.2);
+        }
+        .test-key.testing {
+            border-left-color: #ff9800;
+            background: rgba(255, 152, 0, 0.2);
+        }
+        button {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: transform 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .results {
+            margin-top: 20px;
+            font-family: monospace;
+        }
+        .key-info {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        .status-icon {
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 API Keys Diagnostic Tool</h1>
+        <p>Tool này sẽ test từng API key để identify key nào bị fail trong hệ thống.</p>
+        
+        <button onclick="testAllKeys()">🚀 Test All 5 API Keys</button>
+        <button onclick="clearResults()">🧹 Clear Results</button>
+        
+        <div id="key-tests"></div>
+        
+        <div id="summary" style="margin-top: 30px;"></div>
+    </div>
+
+    <script>
+        // 🔑 Same API keys as in the main system
+        const GEMINI_API_KEYS = [
+            "AIzaSyDtjfBdfcYGjeGGLEWj542ceXrcAXuPDk0",
+            "AIzaSyC6cmnMxSCeEiSZUMENqvDUqHt1lhnCbW4", 
+            "AIzaSyD12VUKWhUKdFn0TY5Dnk8RvwIdsuryyvo",
+            "AIzaSyDjrcdp7WQOdwC926-L0wNGVmH53NDLXhw",
+            "AIzaSyCP1QlMoP0sr2e80d9EjR00WgMQibgE7Q8"
+        ];
+        
+        const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
+        
+        let testResults = [];
+
+        async function testSingleKey(keyIndex) {
+            const apiKey = GEMINI_API_KEYS[keyIndex];
+            const keyPreview = `${apiKey.slice(0, 12)}...${apiKey.slice(-4)}`;
+            
+            const testDiv = document.getElementById(`key-${keyIndex}`);
+            testDiv.className = 'test-key testing';
+            testDiv.innerHTML = `
+                <div class="status-icon">⏳</div>
+                <strong>Key ${keyIndex + 1}</strong>: ${keyPreview}
+                <div class="key-info">Testing...</div>
+            `;
+            
+            const testPrompt = {
+                contents: [{
+                    parts: [{ text: "Test message. Reply with exactly: 'API key working'" }]
+                }],
+                generationConfig: {
+                    temperature: 0.1,
+                    topK: 1,
+                    topP: 1,
+                    maxOutputTokens: 20,
+                },
+                safetySettings: [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                ]
+            };
+
+            try {
+                const response = await fetch(`${GEMINI_API_BASE_URL}?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testPrompt)
+                });
+
+                const responseTime = new Date().toLocaleTimeString();
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                        const message = data.candidates[0].content.parts[0].text.trim();
+                        testDiv.className = 'test-key success';
+                        testDiv.innerHTML = `
+                            <div class="status-icon">✅</div>
+                            <strong>Key ${keyIndex + 1}</strong>: ${keyPreview}
+                            <div class="key-info">
+                                ✅ Status: WORKING<br>
+                                📝 Response: "${message}"<br>
+                                ⏰ Time: ${responseTime}
+                            </div>
+                        `;
+                        testResults[keyIndex] = { success: true, message, responseTime };
+                        return true;
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    testDiv.className = 'test-key error';
+                    testDiv.innerHTML = `
+                        <div class="status-icon">❌</div>
+                        <strong>Key ${keyIndex + 1}</strong>: ${keyPreview}
+                        <div class="key-info">
+                            ❌ Status: FAILED<br>
+                            🔴 HTTP Status: ${response.status}<br>
+                            📋 Error: ${errorData.error?.message || 'Unknown error'}<br>
+                            ⏰ Time: ${responseTime}
+                        </div>
+                    `;
+                    testResults[keyIndex] = { 
+                        success: false, 
+                        error: `${response.status}: ${errorData.error?.message || 'Unknown error'}`,
+                        responseTime 
+                    };
+                    return false;
+                }
+            } catch (error) {
+                testDiv.className = 'test-key error';
+                testDiv.innerHTML = `
+                    <div class="status-icon">💥</div>
+                    <strong>Key ${keyIndex + 1}</strong>: ${keyPreview}
+                    <div class="key-info">
+                        💥 Status: EXCEPTION<br>
+                        📋 Error: ${error.message}<br>
+                        ⏰ Time: ${new Date().toLocaleTimeString()}
+                    </div>
+                `;
+                testResults[keyIndex] = { success: false, error: error.message };
+                return false;
+            }
+        }
+
+        async function testAllKeys() {
+            testResults = [];
+            const keyTestsDiv = document.getElementById('key-tests');
+            
+            // Create test divs for each key
+            keyTestsDiv.innerHTML = GEMINI_API_KEYS.map((_, index) => 
+                `<div id="key-${index}" class="test-key">
+                    <div class="status-icon">⭕</div>
+                    <strong>Key ${index + 1}</strong>: Waiting...
+                </div>`
+            ).join('');
+            
+            // Test all keys sequentially
+            for (let i = 0; i < GEMINI_API_KEYS.length; i++) {
+                await testSingleKey(i);
+                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay between tests
+            }
+            
+            generateSummary();
+        }
+
+        function generateSummary() {
+            const summaryDiv = document.getElementById('summary');
+            const workingKeys = testResults.filter(r => r && r.success).length;
+            const failedKeys = testResults.filter(r => r && !r.success).length;
+            
+            let summaryHTML = `
+                <h2>📊 Test Summary</h2>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
+                    <h3>Overall Status:</h3>
+                    <p>✅ Working Keys: ${workingKeys}/5</p>
+                    <p>❌ Failed Keys: ${failedKeys}/5</p>
+                    <p>📈 Success Rate: ${Math.round((workingKeys/5) * 100)}%</p>
+                    
+                    <h3>Detailed Report:</h3>
+            `;
+            
+            testResults.forEach((result, index) => {
+                if (result) {
+                    const keyPreview = `${GEMINI_API_KEYS[index].slice(0, 12)}...${GEMINI_API_KEYS[index].slice(-4)}`;
+                    if (result.success) {
+                        summaryHTML += `<p>✅ Key ${index + 1} (${keyPreview}): WORKING</p>`;
+                    } else {
+                        summaryHTML += `<p>❌ Key ${index + 1} (${keyPreview}): FAILED - ${result.error}</p>`;
+                    }
+                }
+            });
+            
+            summaryHTML += '</div>';
+            
+            if (failedKeys > 0) {
+                summaryHTML += `
+                    <div style="background: rgba(244,67,54,0.2); padding: 20px; border-radius: 15px; margin-top: 20px;">
+                        <h3>🚨 Action Required:</h3>
+                        <p>Có ${failedKeys} API key(s) bị lỗi. Cần thay thế các key này để đảm bảo hệ thống hoạt động ổn định.</p>
+                        <p><strong>Recommendation:</strong> Sử dụng only working keys hoặc thay thế failed keys.</p>
+                    </div>
+                `;
+            } else if (workingKeys === 5) {
+                summaryHTML += `
+                    <div style="background: rgba(76,175,80,0.2); padding: 20px; border-radius: 15px; margin-top: 20px;">
+                        <h3>🎉 Perfect Status!</h3>
+                        <p>Tất cả 5 API keys đều hoạt động tốt. Hệ thống failover ready!</p>
+                    </div>
+                `;
+            }
+            
+            summaryDiv.innerHTML = summaryHTML;
+        }
+
+        function clearResults() {
+            document.getElementById('key-tests').innerHTML = '';
+            document.getElementById('summary').innerHTML = '';
+            testResults = [];
+        }
+    </script>
+</body>
+</html>

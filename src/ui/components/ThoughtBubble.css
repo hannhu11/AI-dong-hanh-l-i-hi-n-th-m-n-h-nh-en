@@ -1,0 +1,138 @@
+/* ThoughtBubble.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+
+.thought-bubble {
+  font-family: 'Inter', 'Siemreap', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.thought-bubble__content {
+  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 280px;
+  word-wrap: break-word;
+}
+
+.thought-bubble__text {
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.thought-bubble__tail {
+  position: absolute;
+  bottom: -10px;
+  right: 30px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #667eea;
+}
+
+/* Animation states */
+.thought-bubble--hidden {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.8);
+}
+
+.thought-bubble--fade-in {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.8);
+  animation: fadeInBounce 1.5s ease-out forwards;
+}
+
+.thought-bubble--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.thought-bubble--fade-out {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: fadeOutSlide 1.5s ease-in forwards;
+}
+
+/* Keyframe animations */
+@keyframes fadeInBounce {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.6);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeOutSlide {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.8);
+  }
+}
+
+/* Subtle floating animation when visible */
+.thought-bubble--visible .thought-bubble__content {
+  animation: subtleFloat 4s ease-in-out infinite;
+}
+
+@keyframes subtleFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .thought-bubble {
+    top: 10px !important;
+    right: 10px !important;
+    font-size: 12px;
+  }
+  
+  .thought-bubble__content {
+    padding: 12px 16px;
+    max-width: 240px;
+    border-radius: 16px;
+  }
+  
+  .thought-bubble__tail {
+    right: 20px;
+    border-left-width: 8px;
+    border-right-width: 8px;
+    border-top-width: 8px;
+    bottom: -8px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .thought-bubble__content {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+  
+  .thought-bubble__tail {
+    border-top-color: #2d3748;
+  }
+}

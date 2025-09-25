@@ -1,0 +1,174 @@
+/* 🎯 SCENARIOS TAB STYLING */
+
+.scenarios-header {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(143, 130, 255, 0.1) 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.suggestions-card {
+  background: linear-gradient(135deg, rgba(143, 130, 255, 0.05) 0%, rgba(251, 146, 60, 0.05) 100%);
+  border: 1px solid rgba(143, 130, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.suggestions-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(143, 130, 255, 0.15);
+}
+
+.scenarios-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.scenarios-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.scenario-card {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.scenario-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border-color: rgba(74, 144, 226, 0.3);
+}
+
+.scenario-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #4A90E2, #8F82FF, #FB9238);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.scenario-card:hover::before {
+  opacity: 1;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background: linear-gradient(135deg, rgba(156, 163, 175, 0.05) 0%, rgba(107, 114, 128, 0.05) 100%);
+  border: 2px dashed rgba(156, 163, 175, 0.3);
+}
+
+/* Action icons animation */
+.scenario-card .mantine-ThemeIcon-root {
+  transition: all 0.2s ease;
+}
+
+.scenario-card:hover .mantine-ThemeIcon-root {
+  transform: scale(1.1);
+}
+
+/* Button hover effects */
+.scenario-card .mantine-Button-root {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.scenario-card .mantine-Button-root::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.scenario-card:hover .mantine-Button-root::before {
+  left: 100%;
+}
+
+/* Dark mode adjustments */
+[data-mantine-color-scheme="dark"] .scenarios-header {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.15) 0%, rgba(143, 130, 255, 0.15) 100%);
+  border-color: rgba(74, 144, 226, 0.3);
+}
+
+[data-mantine-color-scheme="dark"] .suggestions-card {
+  background: linear-gradient(135deg, rgba(143, 130, 255, 0.1) 0%, rgba(251, 146, 60, 0.1) 100%);
+  border-color: rgba(143, 130, 255, 0.3);
+}
+
+[data-mantine-color-scheme="dark"] .scenario-card {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-mantine-color-scheme="dark"] .scenario-card:hover {
+  border-color: rgba(74, 144, 226, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+[data-mantine-color-scheme="dark"] .empty-state {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .scenarios-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .scenarios-header {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .scenario-card {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Loading states */
+.scenarios-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  opacity: 0.6;
+}
+
+/* Animation for new scenarios */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scenario-card {
+  animation: slideInUp 0.3s ease-out;
+}
+
+/* Badge styling */
+.scenario-card .mantine-Badge-root {
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 0.6rem;
+  letter-spacing: 0.5px;
+}

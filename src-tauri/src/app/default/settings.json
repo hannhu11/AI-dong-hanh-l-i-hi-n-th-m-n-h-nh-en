@@ -1,0 +1,13 @@
+{
+    "theme": "dark",
+    "language": "vi",
+    "allowPetAboveTaskbar": false,
+    "allowPetInteraction": true,
+    "allowPetClimbing": true,
+    "allowAutoStartUp": false,
+    "allowOverridePetScale": true,
+    "petScale": 0.7,
+    "city": "Quy Nhon",
+    "aiEnabled": true,
+    "aiFrequencyMinutes": 3
+}

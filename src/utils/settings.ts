@@ -33,8 +33,23 @@ export async function getAppSettings({ configName = "settings.json", key = "app"
     }
 
     const data = await readTextFile(configPath);
-    const json = JSON.parse(data);
-    return json[key];
+    
+    // 🛡️ Handle empty or corrupted JSON file
+    if (!data || data.trim() === '') {
+        console.warn(`⚠️ Settings file is empty: ${configPath}`);
+        if (withErrorDialog) await confirm(`Settings file is empty: ${configPath}`, { title: "WindowPet Dialog", type: 'warning' });
+        return;
+    }
+    
+    try {
+        const json = JSON.parse(data);
+        return json[key];
+    } catch (parseError) {
+        console.error(`❌ JSON parse error in ${configPath}:`, parseError);
+        console.log(`📄 Raw data: "${data}"`);
+        if (withErrorDialog) await confirm(`Settings file corrupted: ${configPath}`, { title: "WindowPet Dialog", type: 'error' });
+        return;
+    }
 }
 
 // set a specific key under object app

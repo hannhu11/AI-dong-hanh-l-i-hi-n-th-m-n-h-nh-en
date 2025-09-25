@@ -53,7 +53,10 @@ class PetAIManager {
     }
 
     // Dừng timer cũ nếu có
+    const hadExistingTimer = this.activeTimers.has(config.petId);
     this.stopAITimer(config.petId);
+    
+    console.log(`🎯 [DEBUG] Starting timer for pet ${config.petId.slice(-8)}... (${hadExistingTimer ? 'replacing' : 'new'}) - Total timers: ${this.activeTimers.size}`);
     
     // 🎯 Use user-defined frequency instead of random interval
     const userInterval = this.getAIFrequencyMs();
@@ -69,7 +72,8 @@ class PetAIManager {
     }, initialDelay);
     
     this.activeTimers.set(config.petId, timer);
-    console.log(`🧠 Master Creative System khởi động - Frequency: ${Math.round(userInterval/60000)} phút`);
+    const totalTimers = this.activeTimers.size;
+    console.log(`🧠 Master Creative System khởi động - Frequency: ${Math.round(userInterval/60000)} phút (Total: ${totalTimers} timers)`);
   }
   
   /**
@@ -80,7 +84,7 @@ class PetAIManager {
     if (timer) {
       clearTimeout(timer);
       this.activeTimers.delete(petId);
-      console.log(`🛑 AI Timer stopped cho pet ${petId}`);
+      console.log(`🛑 AI Timer stopped cho pet ${petId.slice(-8)} - Remaining timers: ${this.activeTimers.size}`);
     }
   }
   
@@ -88,11 +92,48 @@ class PetAIManager {
    * Dừng tất cả timer AI
    */
   public stopAllTimers(): void {
+    const timerCount = this.activeTimers.size;
+    console.log(`🧹 [DEBUG] Stopping ${timerCount} active AI timers...`);
+    
     this.activeTimers.forEach((timer, petId) => {
       clearTimeout(timer);
-      console.log(`🛑 AI Timer stopped cho pet ${petId}`);
+      console.log(`🛑 AI Timer stopped cho pet ${petId.slice(-8)}`);
     });
     this.activeTimers.clear();
+    console.log(`🧹 [DEBUG] All ${timerCount} timers cleared. Active timers now: ${this.activeTimers.size}`);
+  }
+
+  /**
+   * 🔄 Restart tất cả timers với frequency mới từ settings
+   */
+  public restartAllTimersWithNewFrequency(): void {
+    const newFrequencyMs = this.getAIFrequencyMs();
+    const newFrequencyMin = Math.round(newFrequencyMs / 60000);
+    console.log(`🔄 Restarting all AI timers with new frequency: ${newFrequencyMin} minutes`);
+    
+    // 📊 Debug current state
+    console.log(`🔍 [DEBUG] AI Enabled: ${this.isAIEnabled()}`);
+    console.log(`🔍 [DEBUG] Current active timers: ${this.activeTimers.size}`);
+    
+    // Lấy danh sách pets hiện tại đang có timer
+    const activePetIds = Array.from(this.activeTimers.keys());
+    console.log(`🔍 [DEBUG] Active pet IDs: ${activePetIds.join(', ')}`);
+    
+    // Stop tất cả timers hiện tại
+    this.stopAllTimers();
+    
+    // Emit event để Pets.ts biết cần restart timers với frequency mới
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ai-frequency-changed', {
+        detail: { 
+          petIds: activePetIds,
+          newFrequency: newFrequencyMin 
+        }
+      }));
+      console.log(`⚡ Event emitted: ${activePetIds.length} pets will restart with ${newFrequencyMin}min frequency`);
+    } else {
+      console.error(`❌ Window is undefined, cannot emit restart event!`);
+    }
   }
   
   /**
@@ -139,7 +180,8 @@ class PetAIManager {
     }, userInterval);
     
     this.activeTimers.set(config.petId, timer);
-    console.log(`⏰ Next message in ${intervalMinutes} minutes (User setting: ${intervalMinutes}min)`);
+    const totalTimers = this.activeTimers.size;
+    console.log(`⏰ Next message in ${intervalMinutes} minutes for pet ${config.petId.slice(-8)} (User: ${intervalMinutes}min, Total: ${totalTimers} timers)`);
   }
   
   /**
@@ -174,13 +216,15 @@ class PetAIManager {
         mood: getMoodFromContext(timeInfo.timeOfDay, weatherDescription, isLongSession)
       };
       
-      console.log(`🧠 Master Creative System: Tạo thông điệp ${isLongSession ? 'nghỉ ngơi' : 'tương tác'} lúc ${timeInfo.timeOfDay}`);
+      console.log(`🧠 [DEBUG] Generating ${isLongSession ? 'rest' : 'interaction'} message for pet ${config.petId.slice(-8)} at ${timeInfo.timeOfDay} (Total timers: ${this.activeTimers.size})`);
       
       // 🎯 SỬ DỤNG MASTER CREATIVE SYSTEM - Hoàn toàn chống lặp nội dung
       const aiResponse = await masterCreativeSystem.generateUniqueMessage(context);
       
       if (!aiResponse.success) {
         console.warn(`🧠 MasterCreative: Failed to generate unique message, error:`, aiResponse.error);
+      } else if (aiResponse.usesFallback) {
+        console.log(`🛡️ [FALLBACK MODE] Using pre-generated message due to API failures - respects ${Math.round(this.getAIFrequencyMs()/60000)}min frequency`);
       }
       
       if (aiResponse.success && aiResponse.message) {

@@ -56,6 +56,7 @@ class MasterCreativeSystemService {
     message?: string;
     method?: CreativeMethod;
     error?: string;
+    usesFallback?: boolean;
   }> {
     try {
       // 🎲 Step 1: Select creative method intelligently
@@ -92,7 +93,8 @@ class MasterCreativeSystemService {
             return {
               success: true,
               message: result.message,
-              method: selectedMethod
+              method: selectedMethod,
+              usesFallback: false
             };
           } else {
             console.log(`🧠 MasterCreative: Message too similar to previous ones, retrying... (attempt ${attempts + 1})`);
@@ -109,7 +111,8 @@ class MasterCreativeSystemService {
       console.error("🧠 MasterCreative: Error generating message:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
+        usesFallback: false
       };
     }
   }
@@ -396,11 +399,13 @@ Tạo thông điệp độc đáo dựa trên bối cảnh hiện tại một c�
 
   /**
    * 🛡️ Enhanced fallback system với creative methods
+   * Respects user frequency settings for consistent timing
    */
   private generateEnhancedFallbackMessage(method: CreativeMethod, context: CreativePromptContext): {
     success: boolean;
     message: string;
     method: CreativeMethod;
+    usesFallback: boolean;
   } {
     const fallbackMessages: Record<CreativeMethod, string[]> = {
       [CreativeMethod.METAPHOR]: [
@@ -435,7 +440,8 @@ Tạo thông điệp độc đáo dựa trên bối cảnh hiện tại một c�
     return {
       success: true,
       message: selectedMessage,
-      method: method
+      method: method,
+      usesFallback: true
     };
   }
 

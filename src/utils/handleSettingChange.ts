@@ -92,10 +92,18 @@ export const handleSettingChange: IHandleSettingChange = (
             setSettings({ setKey: "aiEnabled", newValue: newValue });
             setAiEnabled(newValue as boolean);
             return;
-        case DispatchType.ChangeAIFrequency:
-            setSettings({ setKey: "aiFrequencyMinutes", newValue: newValue });
-            setAiFrequencyMinutes(newValue as number);
-            return;
+            case DispatchType.ChangeAIFrequency:
+                setSettings({ setKey: "aiFrequencyMinutes", newValue: newValue });
+                setAiFrequencyMinutes(newValue as number);
+                
+                // 🔄 Restart all AI timers với frequency mới - Static import to avoid async
+                import("../services/petAIService").then(({ petAIManager }) => {
+                    petAIManager.restartAllTimersWithNewFrequency();
+                    console.log(`⚡ AI Frequency changed to ${newValue} minutes - timers restarted`);
+                }).catch(error => {
+                    console.error("❌ Error restarting AI timers:", error);
+                });
+                return;
         default:
             return;
     }

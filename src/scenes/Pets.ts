@@ -323,6 +323,30 @@ export default class Pets extends Phaser.Scene {
         // Initialize AI for existing pets
         this.initializeAIForAllPets();
 
+        // 🔄 Listen cho AI frequency changes từ Settings
+        if (typeof window !== 'undefined') {
+            window.addEventListener('ai-frequency-changed', (event: any) => {
+                const { petIds, newFrequency } = event.detail;
+                info(`🔄 [AI FREQUENCY] Received frequency change: ${newFrequency} minutes`);
+                
+                // Restart AI timers cho tất cả pets hiện tại với frequency mới
+                let restartedCount = 0;
+                this.pets.forEach(pet => {
+                    if (petIds.includes(pet.id) || petIds.length === 0) {
+                        this.initializeAIForPet(pet);
+                        restartedCount++;
+                        info(`⚡ [AI FREQUENCY] Restarted AI timer for pet ${pet.id} with new frequency: ${newFrequency} minutes`);
+                    }
+                });
+                
+                if (restartedCount > 0) {
+                    console.log(`🔄 Successfully restarted ${restartedCount} pets with ${newFrequency}min frequency`);
+                }
+            });
+        } else {
+            console.error(`❌ Window undefined in Pets.ts - cannot add event listener!`);
+        }
+
         info("Pets scene loaded with AI companions");
     }
 
@@ -419,6 +443,7 @@ export default class Pets extends Phaser.Scene {
         this.petJumpOrPlayRandomState(this.pets[index]);
         
         // Initialize AI for this pet
+        console.log(`🎯 [DEBUG] About to initialize AI for pet ${sprite.name} (${sprite.id})`);
         this.initializeAIForPet(this.pets[index]);
         
         info(`🎭 [FOUNDATION STABILIZATION] Pet "${sprite.name}" được tạo thành công!`);
@@ -1058,10 +1083,23 @@ export default class Pets extends Phaser.Scene {
      * Khởi tạo AI cho tất cả pets hiện có
      */
     private initializeAIForAllPets(): void {
-        this.pets.forEach(pet => {
+        console.log(`🚀 [DEBUG] Starting AI initialization for ${this.pets.length} pets...`);
+        
+        this.pets.forEach((pet, index) => {
+            console.log(`🚀 [DEBUG] Pet ${index + 1}: ${pet.id} - initializing AI...`);
             this.initializeAIForPet(pet);
         });
+        
         console.log(`🚀 AI initialized for ${this.pets.length} pets`);
+        
+        // 📊 Debug: Check active timers count after a delay
+        setTimeout(() => {
+            const activeTimers = (petAIManager as any).activeTimers?.size || 0;
+            console.log(`📊 [DEBUG] Total active AI timers: ${activeTimers}`);
+            if (activeTimers > this.pets.length) {
+                console.warn(`🚨 [DEBUG] TIMER LEAK DETECTED! ${activeTimers} timers for ${this.pets.length} pets!`);
+            }
+        }, 1000);
     }
 
     /**
@@ -1070,17 +1108,21 @@ export default class Pets extends Phaser.Scene {
     private initializeAIForPet(pet: Pet): void {
         if (!pet || !pet.id) return;
 
+        // 🎯 Use user frequency settings instead of hardcoded values
+        const { aiFrequencyMinutes } = useSettingStore.getState();
+        const userFrequencyMs = (aiFrequencyMinutes || 3) * 60 * 1000; // Convert to milliseconds
+        
         const config = {
             petId: pet.id,
-            minIntervalMs: 60000,  // 1 phút
-            maxIntervalMs: 180000, // 3 phút
+            minIntervalMs: userFrequencyMs,      // Use user setting
+            maxIntervalMs: userFrequencyMs,      // Fixed interval (not random range)
         };
 
         petAIManager.startAITimer(config, (message: AIMessage) => {
             this.handleAIMessage(message);
         });
 
-        console.log(`🤖 AI started for pet ${pet.id}`);
+        console.log(`🤖 AI started for pet ${pet.id} with frequency: ${aiFrequencyMinutes} minutes`);
     }
 
     /**
@@ -1100,8 +1142,17 @@ export default class Pets extends Phaser.Scene {
      * Cleanup khi scene bị destroy
      */
     shutdown(): void {
+        console.log(`🧹 [DEBUG] Pets scene shutting down - ${this.pets.length} pets, stopping all AI timers...`);
+        
         // Stop all AI timers
+        const activeTimersBefore = (petAIManager as any).activeTimers?.size || 0;
+        console.log(`🧹 [DEBUG] Active timers before cleanup: ${activeTimersBefore}`);
+        
         petAIManager.stopAllTimers();
+        
+        const activeTimersAfter = (petAIManager as any).activeTimers?.size || 0;
+        console.log(`🧹 [DEBUG] Active timers after cleanup: ${activeTimersAfter}`);
+        
         console.log("🛑 All AI timers stopped - Scene shutdown");
     }
 }

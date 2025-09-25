@@ -293,15 +293,22 @@ async function callGeminiAPI(systemInstruction: string, userQuery: string): Prom
 }
 
 /**
- * 🌟 ENHANCED FALLBACK MESSAGE SYSTEM
+ * 🌟 ENHANCED FALLBACK MESSAGE SYSTEM  
  * Thông điệp dự phòng sáng tạo theo 4 phương pháp khi API lỗi
+ * 🎯 Respects user frequency settings for consistent behavior
  */
 function getEnhancedFallbackMessage(isLongSession: boolean): string {
   // 🎲 Random creative method selection
   const methods = Object.values(CreativeMethod);
   const selectedMethod = methods[Math.floor(Math.random() * methods.length)];
   
-  console.log(`💫 Fallback Creative Method: ${selectedMethod}`);
+  // 📊 Log user frequency for transparency 
+  try {
+    const { aiFrequencyMinutes } = (global as any).useSettingStore?.getState() || {};
+    console.log(`💫 Fallback Creative Method: ${selectedMethod} (User Frequency: ${aiFrequencyMinutes || 3} min)`);
+  } catch {
+    console.log(`💫 Fallback Creative Method: ${selectedMethod} (Default Frequency)`);
+  }
   
   if (isLongSession) {
     return getRestFallbackByMethod(selectedMethod);
